@@ -2,6 +2,11 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import matplotlib.pyplot as plt
+import scipy.io
+from scipy.interpolate import griddata
+import time
+from itertools import product, combinations
+from plotting import newfig, savefig
 
 ## define & declare global variables
 L_x = 0.25 # domain size (x) = 1/4 m
@@ -33,7 +38,14 @@ max_iterations = 2000
 sigma = (1/(1+pow((dx/dz),2)))*(cos(2*np.pi/nx)+pow((dx/dz),2)*cos(2*np.pi/nz))
 alpha = 2/(1 + sqrt(1 - pow(sigma,2)))
 
-for j in 
+# read in training data (images are located in arushisinha98/rayleigh-taylor-2.0/ABs-101x401)
+# start with streamfunction ("Streamfunction_[XXX].csv", XXX = 10, 20, ... 1000)
+x_train = []
+files = ["Streamfunction_" + str(num) + ".csv" for num in range(10,1000,10)]
+for file in files:
+  with open(file) as file_name:
+    profile = np.loadtxt(file_name, delimiter = " ")
+    x_train.append(np.array(profile))
 
 def Poisson(streamfunction, omega, residual, R, V, S, epsilon)
   """ Poisson solver. Updates streamfunction, residual, R, V, S, epsilon """
@@ -67,12 +79,6 @@ def Poisson(streamfunction, omega, residual, R, V, S, epsilon)
       epsilon = R / ((2*(1/(dx^2) + 1/(dz^2))*S) + V)
       
   return streamfunction, omega, residual, R, V, S, epsilon
-
-def Jacobian(f1, f2):
-  J1 = 0.0
-  J2 = 0.0
-  J3 = 0.0
-  J
   
 def save_fig(outfile, files, fps = 5, loop = 1):
   """ Function to save GIFs """
