@@ -4,48 +4,36 @@ from tensorflow import keras
 import matplotlib.pyplot as plt
 
 ## define & declare global variables
-L_x = 2000 # domain size (x) = 2000 m
-L_z = 2000 # domain size (z) = 2000 m
-nx = 401 # 401 grid points in 0 <= x <= L_x
+L_x = 0.25 # domain size (x) = 1/4 m
+L_z = 1.0 # domain size (z) = 1 m
+nx = 101 # 101 grid points in 0 <= x <= L_x
 nz = 401 # 401 grid points in 0 <= z <= L_z
 dx = L_x/(nx-1) # delta x
 dz = L_z/(nz-1) # delta z
-r0 = 250 # radius = 250 m
-dt = 0.5 # delta t = 0.5 s
+dt = 0.05 # delta t = 0.5 s
 d_theta = 0.5 # delta theta = 0.5 K
 theta_0 = 300 # theta 0 = 300 K
 g = 9.80665 # gravitational acceleration = 9.80665 m/s^2
-T_total = 1500 # T(total) = 1500 seconds
+T_total = 50 # T(total) = 50 seconds
 nt = T_total/dt
-save_frequency = 50 # save solution every 50 iterations
-
-x0 = L_x/2
-z0 = 260
+save_frequency = 10 # save solution every 10 iterations
 
 # artificial diffusion/viscosity
-U = sqrt(r*r0*g*d_theta/theta_0)
-Re = 1500
-K_x = (2*r0*U)/Re
+K_x = pow(10,-3)
 K_z = K_x
+beta = 207*pow(10,-6)
 
 # formatting values
 width = 14 # width of fixed-length data fields
 precision = 6 # precision of data fields
 # error bound values
-tolerance = 0.0000001
+tolerance = 0.000000001
 max_iterations = 2000
 # calculate alpha
-sigma = (1/(1 + ((dx/d)^2)))*(cos(np.pi/nx) + ((dx/dz)^2)*cos(np.pi/nz))
-alpha = 2/(1 + sqrt(1 - sigma^2))
+sigma = (1/(1+pow((dx/dz),2)))*(cos(2*np.pi/nx)+pow((dx/dz),2)*cos(2*np.pi/nz))
+alpha = 2/(1 + sqrt(1 - pow(sigma,2)))
 
-# initialize potential temperature field
-
-def save_fig(outfile, files, fps = 5, loop = 1):
-  """ Function to save GIFs """
-  imgs = [Image.open(file) for file in files]
-  imgs[0].save(fp = outfile, format = 'GIF', append_images = imgs[1:], save_all = True,
-               duration = int(1000/fps), loop = loop)
-
+for j in 
 
 def Poisson(streamfunction, omega, residual, R, V, S, epsilon)
   """ Poisson solver. Updates streamfunction, residual, R, V, S, epsilon """
@@ -85,3 +73,9 @@ def Jacobian(f1, f2):
   J2 = 0.0
   J3 = 0.0
   J
+  
+def save_fig(outfile, files, fps = 5, loop = 1):
+  """ Function to save GIFs """
+  imgs = [Image.open(file) for file in files]
+  imgs[0].save(fp = outfile, format = 'GIF', append_images = imgs[1:], save_all = True,
+               duration = int(1000/fps), loop = loop)
