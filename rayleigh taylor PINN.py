@@ -38,8 +38,8 @@ max_iterations = 2000
 sigma = (1/(1+pow((dx/dy),2)))*(cos(2*np.pi/nx)+pow((dx/dy),2)*cos(2*np.pi/ny))
 alpha = 2/(1 + sqrt(1 - pow(sigma,2)))
 
-def Poisson(streamfunction, omega, residual, R, V, S, epsilon)
-  """ Poisson solver. Updates streamfunction, residual, R, V, S, epsilon """
+def Poisson(streamfunction, omega, residual)
+  """ Poisson solver. Updates streamfunction and computes residual using omega. """
   for j in range(2,n):
     if j == ny: # if periodic
       streamfunction[ny+1] = streamfunction[2] # update ghost node at y = ny+1
@@ -54,28 +54,26 @@ def Poisson(streamfunction, omega, residual, R, V, S, epsilon)
       
       # calculate streamfunction
       streamfunction[j][i] = streamfunction[j][i] + alpha*residual[j][i]/(2*(1/(dx^2) + 1/(dy^2)))
-      streamfunction[j][0] = streamfunction[j][nx-1] # update ghost node at x = 0
-      streamfunction[j][1] = streamfunction[j][nx] # enforce (x = 1) == (x = nx)
-      streamfunction[0] = streamfunction[ny-1] # update ghost node at y = 0
-      streamfunction[1] = streamfunction[ny] # enforce (y = 1) == (y = ny)
+    streamfunction[j][0] = streamfunction[j][nx-1] # update ghost node at x = 0
+    streamfunction[j][1] = streamfunction[j][nx] # enforce (x = 1) == (x = nx)
+  streamfunction[0] = streamfunction[ny-1] # update ghost node at y = 0
+  streamfunction[1] = streamfunction[ny] # enforce (y = 1) == (y = ny)
       
-      for index in range(0,nx+2):
-        streamfunction[0][index] = 0.0
-        streamfunction[1][index] = 0.0
-        streamfunction[ny][index] = 0.0
-        streamfunction[ny+1][index] = 0.0
-        
-      R = max_norm(remove_ghost_nodes(residual))
-      V = max_norm(remove_ghost_nodes(omega))
-      S = one_norm(remove_ghost_nodes(streamfunction))
+  for index in range(0,nx+2):
+    streamfunction[0][index] = 0.0
+    streamfunction[1][index] = 0.0
+    streamfunction[ny][index] = 0.0
+    streamfunction[ny+1][index] = 0.0
       
-      epsilon = R / ((2*(1/(dx^2) + 1/(dy^2))*S) + V)
-      
-  return streamfunction, omega, residual, R, V, S, epsilon
+  return streamfunction, omega, residual
+
+def Jacobian(f1, f2):
+  """ computes the Jacobian of two matrices, f1 and f2, and returns a scalar. """
+  return J
   
 if __name__ == "__main__":
   N_train = 5000
-  layers = [, , , , ] # specify the layers that we want
+  layers = [3, 20, 20, 20, 20, 20, 20, 20, 20, 2] # specify the layers that we want
   
   # load data
   # read in training data (images are located in arushisinha98/rayleigh-taylor-2.0/ABs-101x401)
@@ -88,6 +86,7 @@ if __name__ == "__main__":
       img = np.loadtxt(file_name, delimiter = ",")
       streamfunction_vals.append(np.array(img))
   print(streamfunction_vals.shape)
+  print(streamfunction_vals.flatten()[:,None])
   
   files = ["Omega_" + str(num) + ".csv" for num in range(10,1000,10)]
   for file in files:
@@ -95,6 +94,7 @@ if __name__ == "__main__":
       img = np.loadtxt(file_name, delimiter = ",")
       omega_vals.append(np.array(img))
   print(omega_vals.shape)
+  print(omega_vals.flatten()[:,None])
   
   files = ["Theta_" + str(num) + ".csv" for num in range(10,1000,10)]
   for file in files:
@@ -102,6 +102,7 @@ if __name__ == "__main__":
       img = np.loadtxt(file_name, delimiter = ",")
       theta_vals.append(np.array(img))
   print(theta_vals.shape)
+  print(theta_vals.flatten()[:,None])
   
   # training data -- random w/o replacement
   idx = np.random.choice(nt, replace = False)
@@ -110,7 +111,7 @@ if __name__ == "__main__":
   theta_train = theta_vals[idx,:]
   
   # training
-  model = PhysicsInformedNN(streamfunction_train, omega_train, theta_train, t_train, layers)
+  model = PhysicsInformedNN(x_train, y_train, t_train, streamfunction_train, omega_train, theta_train, layers)
   
   
 def save_fig(outfile, files, fps = 5, loop = 1):
