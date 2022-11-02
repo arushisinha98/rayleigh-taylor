@@ -38,8 +38,11 @@ max_iterations = 2000
 sigma = (1/(1+pow((dx/dy),2)))*(cos(2*np.pi/nx)+pow((dx/dy),2)*cos(2*np.pi/ny))
 alpha = 2/(1 + sqrt(1 - pow(sigma,2)))
 
-def Poisson(streamfunction, omega, residual)
+def Poisson(streamfunction, omega)
   """ Poisson solver. Updates streamfunction and computes residual using omega. """
+  # initialize residual matrix
+  residual = [[0.0 for __ in range(nx)] for __ in range(ny)]
+  
   for j in range(2,n):
     if j == ny: # if periodic
       streamfunction[ny+1] = streamfunction[2] # update ghost node at y = ny+1
@@ -65,12 +68,52 @@ def Poisson(streamfunction, omega, residual)
     streamfunction[ny][index] = 0.0
     streamfunction[ny+1][index] = 0.0
       
-  return streamfunction, omega, residual
+  return residual
 
 def Jacobian(f1, f2):
   """ computes the Jacobian of two matrices, f1 and f2, and returns a scalar. """
   return J
   
+class PhysicsInformedNN:
+  # initialize the class
+  def __init__(self, x, y, t, streamfunction, omega, theta, residual, layers):
+    X = np.concatenate([x, y, t],1)
+    self.lb = X.min(0) #?
+    self.ub = X.max(0) #?
+    
+    self.X = X
+    self.x = X[:,0:1]
+    self.y = X[:,1:2]
+    self.t = X[:,2:3]
+    
+    self.streamfunction = streamfunction
+    self.omega = omega
+    self.theta = theta
+    self.residual = residual
+    
+    self.layers = layers
+    
+    # initialize NN
+    self.weights, self.biases = self.initialize_NN(layers)
+    # initialize parameters
+    #?
+    self.sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True,
+                                                   log_device_placement = True))
+    self.x_tf = tf.placeholder(tf.float32, shape = [None, self.x.shape[1]])
+    self.y_tf = tf.placeholder(tf.float32, shape = [None, self.y.shape[1]])
+    self.t_tf = tf.placeholder(tf.float32, shape = [None, self.t.shape[1]])
+    
+    self.streamfunction_tf = tf.placeholder(tf.float32, shape = [None, self.streamfunction.shape[1]])
+    self.omega_tf = tf.placeholder(tf.float32, shape = [None, self.omega.shape[1]])
+    self.theta_tf = tf.placeholder(tf.float32, shape = [None, self.theta.shape[1]])
+    
+    self.streamfunction_pred, self.omega_pred, self.theta_pred = net_NS(self.x_tf, self.y_tf, self.t_tf)
+    
+    self.loss = tf.reduce_sum(tf.square(self.streamfunction_tf - self.streamfunction_pred)) + \
+                tf.reduce_sum(tf.square(self.omega_tf - self.omega_pred)) + \ # do we need omege and theta costs too?
+                tf.reduce_sum(tf.square(self.theta_tf - self.theta_pred)) + \
+                tf.reduce_sum(tf.square(Poisson(self.streamfuction_pred, self.omega_pred, residual)
+    
 if __name__ == "__main__":
   N_train = 5000
   layers = [3, 20, 20, 20, 20, 20, 20, 20, 20, 2] # specify the layers that we want
@@ -112,6 +155,16 @@ if __name__ == "__main__":
   
   # training
   model = PhysicsInformedNN(x_train, y_train, t_train, streamfunction_train, omega_train, theta_train, layers)
+  model.train(200000)
+  
+  # test data (entire x, y, t, domain)
+  t_test = np.linspace(0,nt)
+  x_test = np.linspace(0,nx)
+  y_test = np.linsapce(0,ny)
+  
+  streamfunction_pred, omega_pred, theta_pred = model.predict(x_test, y_test, t_test)
+  
+  # split streamfunction_pred into nt images and plot to compare with streamfunction_train images
   
   
 def save_fig(outfile, files, fps = 5, loop = 1):
