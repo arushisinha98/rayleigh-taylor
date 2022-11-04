@@ -43,7 +43,7 @@ def Poisson(streamfunction, omega)
   # initialize residual matrix
   residual = [[0.0 for __ in range(nx)] for __ in range(ny)]
   
-  for j in range(2,n):
+  for j in range(2,ny):
     if j == ny: # if periodic
       streamfunction[ny+1] = streamfunction[2] # update ghost node at y = ny+1
     for i in range(1,nx+1):
@@ -57,10 +57,10 @@ def Poisson(streamfunction, omega)
       
       # calculate streamfunction
       streamfunction[j][i] = streamfunction[j][i] + alpha*residual[j][i]/(2*(1/(dx^2) + 1/(dy^2)))
-    streamfunction[j][0] = streamfunction[j][nx-1] # update ghost node at x = 0
-    streamfunction[j][1] = streamfunction[j][nx] # enforce (x = 1) == (x = nx)
-  streamfunction[0] = streamfunction[ny-1] # update ghost node at y = 0
-  streamfunction[1] = streamfunction[ny] # enforce (y = 1) == (y = ny)
+    # streamfunction[j][0] = streamfunction[j][nx-1] # update ghost node at x = 0
+    # streamfunction[j][1] = streamfunction[j][nx] # enforce (x = 1) == (x = nx)
+  # streamfunction[0] = streamfunction[ny-1] # update ghost node at y = 0
+  # streamfunction[1] = streamfunction[ny] # enforce (y = 1) == (y = ny)
       
   for index in range(0,nx+2):
     streamfunction[0][index] = 0.0
