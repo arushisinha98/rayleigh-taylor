@@ -1,4 +1,4 @@
-# rayleigh-taylor
+# rayleigh-taylor-2.0
 
 An attempt to implement a physics-informed neural network (PINN) to simulate a Rayleigh-Taylor instability, the perturbed interface of two fluids with different densities. As there is no exact solution to this system of two non-linear partial differential equations (PDEs), the ground truth is provided by a space-time discretized simulation of this instability and the physics-informed cost function includes the residuals of the PDEs and a discretized Poisson solver.
 
