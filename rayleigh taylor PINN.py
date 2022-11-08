@@ -76,7 +76,7 @@ def Jacobian(f1, f2):
   
 class PhysicsInformedNN:
   # initialize the class
-  def __init__(self, x, y, t, streamfunction, omega, theta, residual, layers):
+  def __init__(self, x, y, t, streamfunction, omega, theta, layers):
     X = np.concatenate([x, y, t],1)
     self.lb = X.min(0) #?
     self.ub = X.max(0) #?
@@ -89,7 +89,6 @@ class PhysicsInformedNN:
     self.streamfunction = streamfunction
     self.omega = omega
     self.theta = theta
-    self.residual = residual
     
     self.layers = layers
     
@@ -110,9 +109,52 @@ class PhysicsInformedNN:
     self.streamfunction_pred, self.omega_pred, self.theta_pred = net_NS(self.x_tf, self.y_tf, self.t_tf)
     
     self.loss = tf.reduce_sum(tf.square(self.streamfunction_tf - self.streamfunction_pred)) + \
-                tf.reduce_sum(tf.square(self.omega_tf - self.omega_pred)) + \ # do we need omege and theta costs too?
+                tf.reduce_sum(tf.square(self.omega_tf - self.omega_pred)) + \
                 tf.reduce_sum(tf.square(self.theta_tf - self.theta_pred)) + \
-                tf.reduce_sum(tf.square(Poisson(self.streamfuction_pred, self.omega_pred, residual)
+                tf.reduce_sum(tf.square(Poisson(self.streamfuction_pred, self.omega_pred)))
+    
+    self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(self.loss,
+                                                            method = 'L-BFGS-B',
+                                                            options = {'maxiter' = 50000,
+                                                                       'maxfun' = 50000,
+                                                                       'maxcor' = 50,
+                                                                       'maxls' = 50,
+                                                                       'ftol' = 1.0 * np.finfo(float).eps})
+    self.optimizer_Adam = tf.train.AdamOptimizer()
+    self.train_op_Adam = self.optimizer_Adam.minimize(self.loss)
+    
+    init = tf.global_variables_initializer()
+    self.sess.run(init)
+    
+  def initialize_NN(self, layers):
+    weights = []
+    biases = []
+    num_layers = len(layers)
+    for ll in range(0, num_layers-1):
+      W = self.xavier_init(size = [layers[ll], layers[ll+1]])
+      b = tf.Variable(tf.zeros([1, layers[ll+1]], dtype = tf.float32), dtype = tf.float32)
+      weights.append(W)
+      biases.append(b)
+    return weights, biases
+  
+  def xavier_init(self, size):
+    in_dim = size[0]
+    out_dim = size[1]
+    xavier_stddev = np.sqrt(2/(in_dim + out_dim))
+    return tf.Variable(tf.truncated_normal([in_dim, out_dim], stddev = xavier_stddev), dtype = tf.float32)
+  
+  def neural_net(self, X, weights, biases):
+    num_layers = len(weights) + 1
+    H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0 # standardize
+    for ll in range(0, num_layers - 2):
+      W = weights[ll]
+      b = biases[ll]
+      H = tf.tanh(tf.add(tf.matmul(H, W), b))
+    W = weights[-1]
+    b = biases[-1]
+    Y = tf.add(tf.matmul(H, W), b)
+    return Y
+                                                            
     
 if __name__ == "__main__":
   N_train = 5000
